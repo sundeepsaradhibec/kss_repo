@@ -1,26 +1,43 @@
+
 pipeline {
     agent any
 
     stages {
-        stage('Build') {
+        stage('Checkout Source Code') {
             steps {
-                echo 'Building....'
+                checkout scm
+                echo 'Source code downloaded from Git.'
             }
         }
-        stage('Test') {
+
+        stage('Check Tools') {
             steps {
-                echo 'Testing....'
+                sh 'java -version'
+                sh 'docker --version'
+                sh 'ansible-playbook --version'
             }
         }
-        stage('Deploy') {
+
+        stage('Build and Deploy using Ansible') {
             steps {
-                echo 'Deploying....'
+                sh 'ansible-playbook -i localhost, deploy.yml'
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                sh 'docker ps -a --filter name=java-demo'
+                sh 'docker logs java-demo'
             }
         }
     }
+
     post {
+        success {
+            echo 'CI/CD pipeline completed successfully!'
+        }
         failure {
-            echo "Thank You"
+            echo 'Pipeline failed. Check the Jenkins console output.'
         }
     }
 }
